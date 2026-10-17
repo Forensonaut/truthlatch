@@ -1,14 +1,25 @@
 """TruthLatch HTTP API."""
 
+import os
+
 from fastapi import FastAPI, HTTPException
-from pydantic import ValidationError
+from backend.audit import AuditLog, AuditError
+from backend.memory_registry import InMemoryRegistry
 from backend.registry import Registry, RegistryError
 from backend.schemas import VerificationRequest, VerificationResponse
 from backend.verifier import verify_request
-from backend.audit import AuditLog, AuditError
 
-audit_log = AuditLog()
-registry = Registry()
+
+def build_registry():
+    """Firestore by default; in-memory when TRUTHLATCH_REGISTRY=memory."""
+    if os.environ.get("TRUTHLATCH_REGISTRY", "firestore").lower() == "memory":
+        return InMemoryRegistry()
+    return Registry()
+
+
+# TRUTHLATCH_AUDIT_PATH lets tests write the audit log to a throwaway file.
+audit_log = AuditLog(os.environ.get("TRUTHLATCH_AUDIT_PATH", "data/audit.jsonl"))
+registry = build_registry()
 
 app = FastAPI(
     title="TruthLatch API",
@@ -20,7 +31,6 @@ app = FastAPI(
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "truthlatch"}
-
 
 
 @app.post("/api/v1/verify", response_model=VerificationResponse)
@@ -52,6 +62,3 @@ def verify_endpoint(request: VerificationRequest):
         ) from exc
 
     return response
-
-
-    
