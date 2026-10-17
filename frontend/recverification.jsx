@@ -1,24 +1,41 @@
 import React from "react";
 import StatusBadge from "./statusbadge.jsx";
 
-const DEFAULT_VERIFICATION = {
-  title: "Revoke privileged access",
-  id: "VER-2026-1048",
-  category: "IAM / PERMISSIONS",
-  status: "VERIFIED",
-  claim: "User access was successfully revoked.",
-  check: {
-    summary: "IAM registry confirms access disabled",
-    principal: "svc-deploy-prod",
-    policy: "admin-write",
-    result: "MATCH",
-  },
-  verifiedAt: "14:32:08 UTC",
-  coverage: "3 of 3 checks passed",
-};
+function formatTimestamp(value) {
+  if (!value) return "Timestamp unavailable";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
 
-function RecVerification({ verification = DEFAULT_VERIFICATION }) {
-  const { title, id, category, status, claim, check, verifiedAt, coverage } = verification;
+function RecVerification({ verification }) {
+  if (!verification) {
+    return (
+      <section className="rec-card" aria-label="Latest verification">
+        <p className="rec-card__eyebrow">LATEST VERIFICATION</p>
+        <h2 className="rec-card__title">No verification run yet</h2>
+        <p className="rec-card__meta">
+          Run a verification to see its result, explanation and evidence here.
+        </p>
+        <hr className="rec-card__divider" />
+        <p className="rec-card__claim">
+          TruthLatch returns VERIFIED, CONTRADICTED or UNKNOWN based on fresh,
+          authoritative evidence.
+        </p>
+      </section>
+    );
+  }
+
+  const status = verification.status || "UNKNOWN";
+  const evidence = Array.isArray(verification.evidence) ? verification.evidence : [];
+  const expected = verification.expected_observation
+    || evidence[0]?.observation
+    || "No sufficient evidence matched the expected state.";
+  const sourceSummary = evidence.length
+    ? [...new Set(evidence.map((item) => item.source))].join(", ")
+    : "No relevant evidence was accepted";
+  const badgeStatus = status === "VERIFIED"
+    ? "match"
+    : status.toLowerCase();
 
   return (
     <section className="rec-card" aria-label="Latest verification">
@@ -26,33 +43,34 @@ function RecVerification({ verification = DEFAULT_VERIFICATION }) {
 
       <header className="rec-card__header">
         <div>
-          <h2 className="rec-card__title">{title}</h2>
-          <p className="rec-card__meta">{id} · {category}</p>
+          <h2 className="rec-card__title">{expected}</h2>
+          <p className="rec-card__meta">
+            {verification.verification_id} · API / VERIFY
+          </p>
         </div>
-        <StatusBadge status={status.toLowerCase()} withIcon>{status}</StatusBadge>
+        <StatusBadge status={badgeStatus} withIcon>{status}</StatusBadge>
       </header>
 
       <hr className="rec-card__divider" />
 
       <div className="rec-card__block">
-        <p className="rec-card__eyebrow">AI AGENT CLAIM</p>
-        <p className="rec-card__claim">“{claim}”</p>
+        <p className="rec-card__eyebrow">VERIFICATION EXPLANATION</p>
+        <p className="rec-card__claim">{verification.explanation}</p>
       </div>
 
       <div className="rec-card__block">
-        <p className="rec-card__eyebrow">AUTHORITATIVE STATE CHECK</p>
+        <p className="rec-card__eyebrow">EVIDENCE REVIEWED</p>
         <div className="rec-check">
-          <span className="rec-check__icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m5 12.5 4.5 4.5L19 7.5" />
-            </svg>
+          <span className="rec-check__icon" aria-hidden="true">
+            {evidence.length > 0 ? "✓" : "—"}
           </span>
           <div className="rec-check__text">
-            <strong>{check.summary}</strong>
-            <span>principal: {check.principal} · policy: {check.policy}</span>
+            <strong>{sourceSummary}</strong>
+            <span>{evidence.length} relevant evidence item{evidence.length === 1 ? "" : "s"} returned by the verifier</span>
           </div>
-          <StatusBadge status="match">{check.result}</StatusBadge>
+          <StatusBadge status={badgeStatus}>
+            {evidence.length ? "REVIEWED" : "NONE"}
+          </StatusBadge>
         </div>
       </div>
 
@@ -60,12 +78,14 @@ function RecVerification({ verification = DEFAULT_VERIFICATION }) {
 
       <footer className="rec-card__footer">
         <div>
-          <p className="rec-card__eyebrow">VERIFIED AT</p>
-          <p className="rec-card__time">{verifiedAt}</p>
+          <p className="rec-card__eyebrow">CHECKED AT</p>
+          <p className="rec-card__time">{formatTimestamp(verification.checked_at)}</p>
         </div>
         <div>
           <p className="rec-card__eyebrow">EVIDENCE COVERAGE</p>
-          <p className="rec-card__coverage">{coverage}</p>
+          <p className="rec-card__coverage">
+            {evidence.length} relevant item{evidence.length === 1 ? "" : "s"}
+          </p>
         </div>
       </footer>
     </section>
@@ -73,4 +93,3 @@ function RecVerification({ verification = DEFAULT_VERIFICATION }) {
 }
 
 export default RecVerification;
-

@@ -3,6 +3,8 @@
 import os
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from backend.audit import AuditLog, AuditError
 from backend.memory_registry import InMemoryRegistry
 from backend.registry import Registry, RegistryError
@@ -17,7 +19,7 @@ def build_registry():
     return Registry()
 
 
-# TRUTHLATCH_AUDIT_PATH lets tests write the audit log to a throwaway file.
+# TRUTHLATCH_AUDIT_PATH lets tests and deployments choose the audit log location.
 audit_log = AuditLog(os.environ.get("TRUTHLATCH_AUDIT_PATH", "data/audit.jsonl"))
 registry = build_registry()
 
@@ -27,10 +29,42 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Configure browser access explicitly for the frontend. Set
+# TRUTHLATCH_CORS_ORIGINS to a comma-separated list of trusted frontend origins.
+_default_cors_origins = "http://localhost:5173,http://127.0.0.1:5173"
+allowed_origins = [
+    origin.strip()
+    for origin in os.environ.get(
+        "TRUTHLATCH_CORS_ORIGINS", _default_cors_origins
+    ).split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Accept", "Content-Type", "Authorization"],
+)
+
 
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "truthlatch"}
+
+
+@app.get("/api/v1/history", response_model=list[VerificationResponse])
+def verification_history():
+    """Return audit records with the newest decision first."""
+    try:
+        records = audit_log.get_history()
+    except AuditError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to load verification history",
+        ) from exc
+
+    return [record.model_dump(mode="json") for record in reversed(records)]
 
 
 @app.post("/api/v1/verify", response_model=VerificationResponse)

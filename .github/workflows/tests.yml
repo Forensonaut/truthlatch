@@ -25,12 +25,22 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run test suite
+      - name: Build React frontend
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Run Python test suite
         env:
           TRUTHLATCH_REGISTRY: memory
           TRUTHLATCH_AUDIT_PATH: /tmp/audit.jsonl
