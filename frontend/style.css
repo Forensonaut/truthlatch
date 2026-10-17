@@ -899,3 +899,187 @@ button {
   width: 3px;
   left: -16px;
   color: var(--text);
+
+
+/* ---------- API integration: verification form, notices and history header ---------- */
+.api-alert {
+  padding: 12px 14px;
+  border: 1px solid #7a5a14;
+  border-radius: var(--radius);
+  background: #211b0e;
+  color: #f5d18a;
+  line-height: 1.5;
+}
+
+.verify-form-card {
+  margin: 0 0 22px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+}
+
+.verify-form-card__header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.verify-form-card__header p {
+  margin: 6px 0 20px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.verify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.form-field > span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.form-field > span strong {
+  color: #ff8585;
+}
+
+.form-field > span small,
+.form-field > small {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #0b1013;
+  color: var(--text);
+  font: inherit;
+  line-height: 1.5;
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.form-checkbox input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.form-checkbox span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.form-checkbox small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.form-error {
+  margin: 0;
+  color: #ff8585;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.verify-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-secondary {
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-muted);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.dashboard__data-note {
+  margin: 14px 0 0;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.history__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .verify-form-card {
+    padding: 16px;
+  }
+
+  .history__header {
+    flex-direction: column;
+  }
+
+  .verify-form__actions {
+    flex-wrap: wrap;
+  }
+}
