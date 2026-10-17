@@ -39,7 +39,8 @@
           "evidence_id",
           "source",
           "observation",
-          "observed_at"
+          "observed_at",
+          "authoritative"
         ],
         "properties": {
           "evidence_id": {
