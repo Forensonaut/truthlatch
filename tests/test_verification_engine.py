@@ -1,0 +1,101 @@
+import unittest
+
+from verification.engine import verify
+
+
+NOW = "2026-10-17T12:00:00Z"
+EXPECTED = "user_access=revoked"
+CONTRADICTIONS = ["user_access=active"]
+
+
+def item(observation, evidence_id="e-1", authoritative=True,
+         observed_at="2026-10-17T11:55:00Z"):
+    return {
+        "evidence_id": evidence_id,
+        "source": "synthetic_iam",
+        "observation": observation,
+        "observed_at": observed_at,
+        "authoritative": authoritative,
+    }
+
+
+class VerificationEngineTests(unittest.TestCase):
+    def run_check(self, evidence):
+        return verify(
+            EXPECTED,
+            evidence,
+            checked_at=NOW,
+            max_age_seconds=3600,
+            contradictory_observations=CONTRADICTIONS,
+        )
+
+    def test_verified(self):
+        self.assertEqual(
+            self.run_check([item(EXPECTED)])["status"], "VERIFIED"
+        )
+
+    def test_contradicted(self):
+        self.assertEqual(
+            self.run_check([item("user_access=active")])["status"],
+            "CONTRADICTED",
+        )
+
+    def test_missing_evidence(self):
+        self.assertEqual(self.run_check([])["status"], "UNKNOWN")
+
+    def test_stale_evidence(self):
+        old = item(EXPECTED, observed_at="2026-10-17T10:00:00Z")
+        self.assertEqual(self.run_check([old])["status"], "UNKNOWN")
+
+    def test_conflicting_evidence(self):
+        evidence = [
+            item(EXPECTED, "e-1"),
+            item("user_access=active", "e-2"),
+        ]
+        self.assertEqual(self.run_check(evidence)["status"], "UNKNOWN")
+
+    def test_non_authoritative_evidence(self):
+        self.assertEqual(
+            self.run_check([item(EXPECTED, authoritative=False)])["status"],
+            "UNKNOWN",
+        )
+
+    def test_future_evidence_is_ignored(self):
+        future = item(EXPECTED, observed_at="2026-10-17T12:00:01Z")
+        self.assertEqual(self.run_check([future])["status"], "UNKNOWN")
+
+    def test_naive_timestamp_is_ignored(self):
+        naive = item(EXPECTED, observed_at="2026-10-17T11:55:00")
+        self.assertEqual(self.run_check([naive])["status"], "UNKNOWN")
+
+    def test_malformed_evidence_is_ignored(self):
+        malformed = {"evidence_id": "e-1", "observation": EXPECTED}
+        self.assertEqual(self.run_check([malformed])["status"], "UNKNOWN")
+
+    def test_non_dictionary_evidence_is_ignored(self):
+        self.assertEqual(self.run_check(["not evidence"])["status"], "UNKNOWN")
+
+    def test_invalid_checked_at_raises(self):
+        with self.assertRaises(ValueError):
+            verify(EXPECTED, [], checked_at="not-a-timestamp")
+
+    def test_negative_max_age_raises(self):
+        with self.assertRaises(ValueError):
+            verify(EXPECTED, [], checked_at=NOW, max_age_seconds=-1)
+
+    def test_boolean_max_age_raises(self):
+        with self.assertRaises(ValueError):
+            verify(EXPECTED, [], checked_at=NOW, max_age_seconds=True)
+
+    def test_multiple_supporting_evidence_items(self):
+        evidence = [
+            item(EXPECTED, "e-1"),
+            item(EXPECTED, "e-2"),
+        ]
+        result = self.run_check(evidence)
+        self.assertEqual(result["status"], "VERIFIED")
+        self.assertEqual(len(result["evidence"]), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
