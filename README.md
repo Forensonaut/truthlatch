@@ -57,4 +57,4 @@ npm run dev
 
 Open `http://localhost:5173`. The frontend uses the API at port 8000 on the same hostname. When running on a remote LinuxONE host, use SSH port forwarding for ports 5173 and 8000 rather than exposing these development servers publicly.
 
-The local prototype uses an in-memory registry while Firebase credentials are not configured. Audit history is written to the path in `TRUTHLATCH_AUDIT_PATH`. This verifies the UI-to-API flow, not live Firestore connectivity. Never place Firebase service-account credentials in frontend files.
+The local prototype uses an in-memory registry while Firebase credentials are not configured. The base `requirements.txt` intentionally omits Firebase's native gRPC dependencies so the UI/API prototype can run on IBM LinuxONE. For a supported environment where Firebase Admin's native dependencies install successfully, install `requirements-firebase.txt` to add Firestore support. Audit history is written to the path in `TRUTHLATCH_AUDIT_PATH`. This verifies the UI-to-API flow, not live Firestore connectivity. Never place Firebase service-account credentials in frontend files.
