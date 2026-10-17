@@ -1,20 +1,5 @@
 import React from "react";
-
-/* Since statusbadge.jsx does not exist yet, the VERIFIED / MATCH "pills" within this card are defined here temporarily. 
-Once statusbadge.jsx is created, this can simply be replaced with an import. */
-function Pill({ children, check = false }) {
-  return (
-    <span className="pill pill--success">
-      {check && (
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="m5 12.5 4.5 4.5L19 7.5" />
-        </svg>
-      )}
-      {children}
-    </span>
-  );
-}
+import StatusBadge from "./statusbadge.jsx";
 
 const DEFAULT_VERIFICATION = {
   title: "Revoke privileged access",
@@ -44,7 +29,7 @@ function RecVerification({ verification = DEFAULT_VERIFICATION }) {
           <h2 className="rec-card__title">{title}</h2>
           <p className="rec-card__meta">{id} · {category}</p>
         </div>
-        <Pill check>{status}</Pill>
+        <StatusBadge status={status.toLowerCase()} withIcon>{status}</StatusBadge>
       </header>
 
       <hr className="rec-card__divider" />
@@ -67,7 +52,7 @@ function RecVerification({ verification = DEFAULT_VERIFICATION }) {
             <strong>{check.summary}</strong>
             <span>principal: {check.principal} · policy: {check.policy}</span>
           </div>
-          <Pill>{check.result}</Pill>
+          <StatusBadge status="match">{check.result}</StatusBadge>
         </div>
       </div>
 
@@ -88,5 +73,4 @@ function RecVerification({ verification = DEFAULT_VERIFICATION }) {
 }
 
 export default RecVerification;
-
 
