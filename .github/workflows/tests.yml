@@ -31,4 +31,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run test suite
+        env:
+          TRUTHLATCH_REGISTRY: memory
+          TRUTHLATCH_AUDIT_PATH: /tmp/audit.jsonl
         run: python -m unittest discover -s tests -v
