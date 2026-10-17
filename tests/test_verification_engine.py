@@ -60,6 +60,42 @@ class VerificationEngineTests(unittest.TestCase):
             "UNKNOWN",
         )
 
+    def test_future_evidence_is_ignored(self):
+        future = item(EXPECTED, observed_at="2026-10-17T12:00:01Z")
+        self.assertEqual(self.run_check([future])["status"], "UNKNOWN")
+
+    def test_naive_timestamp_is_ignored(self):
+        naive = item(EXPECTED, observed_at="2026-10-17T11:55:00")
+        self.assertEqual(self.run_check([naive])["status"], "UNKNOWN")
+
+    def test_malformed_evidence_is_ignored(self):
+        malformed = {"evidence_id": "e-1", "observation": EXPECTED}
+        self.assertEqual(self.run_check([malformed])["status"], "UNKNOWN")
+
+    def test_non_dictionary_evidence_is_ignored(self):
+        self.assertEqual(self.run_check(["not evidence"])["status"], "UNKNOWN")
+
+    def test_invalid_checked_at_raises(self):
+        with self.assertRaises(ValueError):
+            verify(EXPECTED, [], checked_at="not-a-timestamp")
+
+    def test_negative_max_age_raises(self):
+        with self.assertRaises(ValueError):
+            verify(EXPECTED, [], checked_at=NOW, max_age_seconds=-1)
+
+    def test_boolean_max_age_raises(self):
+        with self.assertRaises(ValueError):
+            verify(EXPECTED, [], checked_at=NOW, max_age_seconds=True)
+
+    def test_multiple_supporting_evidence_items(self):
+        evidence = [
+            item(EXPECTED, "e-1"),
+            item(EXPECTED, "e-2"),
+        ]
+        result = self.run_check(evidence)
+        self.assertEqual(result["status"], "VERIFIED")
+        self.assertEqual(len(result["evidence"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
