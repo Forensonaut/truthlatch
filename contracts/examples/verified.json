@@ -1,0 +1,15 @@
+{
+  "verification_id": "demo-001",
+  "status": "VERIFIED",
+  "explanation": "Fresh authoritative evidence confirms access is revoked.",
+  "evidence": [
+    {
+      "evidence_id": "evidence-001",
+      "source": "synthetic_iam",
+      "observation": "user_access=revoked",
+      "observed_at": "2026-10-17T10:00:00Z",
+      "authoritative": true
+    }
+  ],
+  "checked_at": "2026-10-17T10:00:05Z"
+}

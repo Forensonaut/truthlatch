@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TruthLatch Verification Result",
+  "description": "Shared contract for an evidence-based verification decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verification_id",
+    "status",
+    "explanation",
+    "evidence",
+    "checked_at"
+  ],
+  "properties": {
+    "verification_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for this verification."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "VERIFIED",
+        "CONTRADICTED",
+        "UNKNOWN"
+      ]
+    },
+    "explanation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable rationale for the outcome."
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id",
+          "source",
+          "observation",
+          "observed_at"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "observation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "authoritative": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

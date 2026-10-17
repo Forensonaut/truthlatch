@@ -1,0 +1,15 @@
+{
+  "verification_id": "demo-002",
+  "status": "CONTRADICTED",
+  "explanation": "Fresh authoritative evidence shows access remains active.",
+  "evidence": [
+    {
+      "evidence_id": "evidence-002",
+      "source": "synthetic_iam",
+      "observation": "user_access=active",
+      "observed_at": "2026-10-17T10:00:00Z",
+      "authoritative": true
+    }
+  ],
+  "checked_at": "2026-10-17T10:00:05Z"
+}
