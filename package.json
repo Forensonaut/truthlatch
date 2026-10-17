@@ -1,0 +1,18 @@
+{
+  "name": "truthlatch",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite frontend --host 0.0.0.0",
+    "build": "vite build frontend",
+    "preview": "vite preview frontend --host 0.0.0.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.14"
+  }
+}
