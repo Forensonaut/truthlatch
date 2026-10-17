@@ -1,14 +1,27 @@
-"""Firestore client initialization and provider for TruthLatch backend."""
+"""Firestore client initialization and provider for TruthLatch backend.
+
+Firebase dependencies are imported lazily so the in-memory prototype can run on
+LinuxONE without building native Firestore/gRPC dependencies.
+"""
 
 import os
 from pathlib import Path
-import firebase_admin
-from firebase_admin import credentials, firestore
-from google.cloud.firestore import Client
+from typing import Any
 
 
-def get_db() -> Client:
-    """Return a Firestore client, initializing the Firebase app if not already initialized."""
+def get_db() -> Any:
+    """Return a Firestore client, initializing Firebase when optional deps exist."""
+    try:
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+    except ImportError as exc:
+        raise RuntimeError(
+            "Firestore storage requires optional dependencies. Install "
+            "requirements-firebase.txt in an environment where its native "
+            "dependencies are supported, or set TRUTHLATCH_REGISTRY=memory "
+            "for the in-memory prototype."
+        ) from exc
+
     if not firebase_admin._apps:
         key_path_env = os.environ.get("FIREBASE_KEY_PATH")
         if key_path_env:
