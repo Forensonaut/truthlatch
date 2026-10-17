@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite frontend --host 0.0.0.0",
+    "dev": "vite frontend --host 127.0.0.1",
     "build": "vite build frontend",
-    "preview": "vite preview frontend --host 0.0.0.0"
+    "preview": "vite preview frontend --host 127.0.0.1"
   },
   "dependencies": {
     "react": "^18.3.1",
