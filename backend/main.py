@@ -22,6 +22,9 @@ def health():
 def verify_endpoint(request: VerificationRequest):
     try:
         result = verify_request(request)
-        return VerificationResponse.model_validate(result)
-    except (ValueError, ValidationError) as exc:
+    except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # Validation failures here indicate an invalid server-generated result,
+    # not invalid client input. Let FastAPI return a generic HTTP 500.
+    return VerificationResponse.model_validate(result)
