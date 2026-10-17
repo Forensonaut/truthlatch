@@ -1,10 +1,9 @@
+"""Firestore-backed registry for TruthLatch verification results."""
 
-"""In-memory registry for TruthLatch verification results."""
-
-from threading import RLock
-
+from google.api_core.exceptions import AlreadyExists, GoogleAPIError
 from pydantic import ValidationError
 
+from backend.firestore_client import get_db
 from backend.schemas import VerificationResponse
 
 
@@ -17,11 +16,11 @@ class DuplicateVerificationError(RegistryError):
 
 
 class Registry:
-    """Store and retrieve validated verification results."""
+    """Store and retrieve validated verification results in Firestore."""
 
     def __init__(self):
-        self._records: dict[str, VerificationResponse] = {}
-        self._lock = RLock()
+        self._db = get_db()
+        self._collection = self._db.collection("verifications")
 
     @staticmethod
     def _validate_id(verification_id: str) -> str:
@@ -31,6 +30,9 @@ class Registry:
 
         if not verification_id.strip():
             raise ValueError("verification_id must not be empty")
+
+        if "/" in verification_id:
+            raise ValueError("verification_id must not contain '/'")
 
         return verification_id
 
@@ -51,31 +53,47 @@ class Registry:
         """Register a result and return a copy of the stored record."""
         validated = self._validate_result(result)
         verification_id = validated.verification_id
+        doc_ref = self._collection.document(verification_id)
+        data = validated.model_dump(mode="json")
 
-        with self._lock:
-            if verification_id in self._records:
-                raise DuplicateVerificationError(
-                    f"Verification already registered: {verification_id}"
-                )
+        try:
+            doc_ref.create(data)
+        except AlreadyExists as exc:
+            raise DuplicateVerificationError(
+                f"Verification already registered: {verification_id}"
+            ) from exc
+        except GoogleAPIError as exc:
+            raise RegistryError(
+                f"Failed to register verification {verification_id}: {exc}"
+            ) from exc
 
-            self._records[verification_id] = validated.model_copy(deep=True)
-            return self._records[verification_id].model_copy(deep=True)
+        return validated.model_copy(deep=True)
 
     def lookup(
         self, verification_id: str
     ) -> VerificationResponse | None:
         """Return a copy of a record, or None if it doesn't exist."""
         verification_id = self._validate_id(verification_id)
+        doc_ref = self._collection.document(verification_id)
 
-        with self._lock:
-            result = self._records.get(verification_id)
+        try:
+            snapshot = doc_ref.get()
+        except GoogleAPIError as exc:
+            raise RegistryError(
+                f"Failed to lookup verification {verification_id}: {exc}"
+            ) from exc
 
-            if result is None:
-                return None
+        if not snapshot.exists:
+            return None
 
-            return result.model_copy(deep=True)
+        return VerificationResponse.model_validate(snapshot.to_dict())
 
     def __len__(self) -> int:
         """Return the number of registered results."""
-        with self._lock:
-            return len(self._records)
+        try:
+            results = self._collection.count().get()
+            return int(results[0][0].value)
+        except GoogleAPIError as exc:
+            raise RegistryError(
+                f"Failed to count verifications: {exc}"
+            ) from exc

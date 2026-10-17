@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI, HTTPException
 from pydantic import ValidationError
-from backend.registry import Registry
+from backend.registry import Registry, RegistryError
 from backend.schemas import VerificationRequest, VerificationResponse
 from backend.verifier import verify_request
 from backend.audit import AuditLog, AuditError
@@ -36,7 +36,7 @@ def verify_endpoint(request: VerificationRequest):
     # Store the verification result in the registry.
     try:
         registry.register(response)
-    except ValueError as exc:
+    except (ValueError, RegistryError) as exc:
         raise HTTPException(
             status_code=500,
             detail="Failed to store verification result",

@@ -1,14 +1,16 @@
-"""Registry tests will be added when the registry interface is agreed."""
-
 """Tests for the TruthLatch verification registry."""
 
 import unittest
+from unittest.mock import patch
+from google.api_core.exceptions import ServiceUnavailable
 
 from backend.registry import (
     Registry,
+    RegistryError,
     DuplicateVerificationError,
 )
 from backend.schemas import VerificationResponse
+from tests.fake_firestore import FakeFirestore
 
 
 def make_result(
@@ -26,6 +28,10 @@ def make_result(
 
 class TestRegistry(unittest.TestCase):
     def setUp(self):
+        self.fake_db = FakeFirestore()
+        patcher = patch("backend.registry.get_db", return_value=self.fake_db)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.registry = Registry()
 
     def test_register_and_lookup(self):
@@ -94,6 +100,48 @@ class TestRegistry(unittest.TestCase):
         self.registry.register(make_result())
 
         self.assertEqual(len(self.registry), 1)
+
+    def test_write_failure_raises_registry_error(self):
+        self.fake_db.set_error(ServiceUnavailable("Firestore write error"))
+        with self.assertRaises(RegistryError) as ctx:
+            self.registry.register(make_result(verification_id="test-write-fail"))
+        self.assertNotIsInstance(ctx.exception, DuplicateVerificationError)
+
+    def test_read_failure_raises_registry_error(self):
+        self.registry.register(make_result(verification_id="test-read-fail"))
+        self.fake_db.set_error(ServiceUnavailable("Firestore read error"))
+        with self.assertRaises(RegistryError):
+            self.registry.lookup("test-read-fail")
+
+    def test_slash_in_id_is_rejected(self):
+        with self.assertRaises(ValueError):
+            self.registry.lookup("invalid/id")
+
+        with self.assertRaises(ValueError):
+            self.registry.register(make_result(verification_id="invalid/id"))
+
+    def test_record_round_trips_with_evidence(self):
+        evidence_item = {
+            "evidence_id": "ev-123",
+            "source": "auth-service",
+            "observation": "user_access=revoked",
+            "observed_at": "2026-10-17T14:29:59Z",
+            "authoritative": True,
+        }
+        result = {
+            "verification_id": "v-roundtrip-001",
+            "status": "VERIFIED",
+            "explanation": "Verified with evidence item.",
+            "evidence": [evidence_item],
+            "checked_at": "2026-10-17T14:30:00Z",
+        }
+        stored = self.registry.register(result)
+        retrieved = self.registry.lookup("v-roundtrip-001")
+        self.assertIsNotNone(retrieved)
+        self.assertEqual(retrieved, stored)
+        self.assertEqual(len(retrieved.evidence), 1)
+        self.assertEqual(retrieved.evidence[0].evidence_id, "ev-123")
+        self.assertEqual(retrieved.evidence[0].authoritative, True)
 
 
 if __name__ == "__main__":
